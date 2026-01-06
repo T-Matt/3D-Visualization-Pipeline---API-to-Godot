@@ -1,0 +1,60 @@
+[gd_scene load_steps=5 format=3 uid="uid://dkh2dnqn7jpkl"]
+
+[ext_resource type="Script" uid="uid://bg8sdhhf3upo1" path="res://scripts/main_controller.gd" id="1_rarhs"]
+[ext_resource type="Script" uid="uid://t24twvx31dku" path="res://scripts/volume_loader_debug.gd" id="2_vcsgt"]
+[ext_resource type="Script" uid="uid://dtacpkn87fjc1" path="res://scripts/volume_renderer.gd" id="3_c01mt"]
+[ext_resource type="Script" uid="uid://cjr2slgo11nrc" path="res://scripts/camera_controller.gd" id="4_nxtc6"]
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_rarhs")
+
+[node name="VolumeLoader" type="Node" parent="."]
+script = ExtResource("2_vcsgt")
+
+[node name="VolumeRenderer" type="MeshInstance3D" parent="."]
+script = ExtResource("3_c01mt")
+
+[node name="Camera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+script = ExtResource("4_nxtc6")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.9465086, 0, 0.32267863, 0, 1, 0, -0.32267863, 0, -0.9465086, 0, 0, 0)
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 17.0
+offset_top = 6.0
+offset_right = 57.0
+offset_bottom = 46.0
+
+[node name="FrameSlider" type="HSlider" parent="UI"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -0.432
+anchor_right = -0.432
+offset_left = 93.28
+offset_whaytop = -17.0
+offset_right = 411.28
+offset_bottom = 112.0
+
+[node name="VariableSelector" type="OptionButton" parent="UI"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -0.432
+anchor_right = -0.432
+offset_left = 138.28
+offset_top = 2.0
+offset_right = 410.28
+offset_bottom = 33.0
+
+[node name="PlayButton" type="Button" parent="UI"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -0.432
+anchor_right = -0.432
+offset_left = 96.28
+offset_top = 2.0
+offset_right = 134.28
+offset_bottom = 32.0

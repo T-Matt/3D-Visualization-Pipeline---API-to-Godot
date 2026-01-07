@@ -72,46 +72,104 @@ func parse_channels(binary_data: PackedByteArray) -> Dictionary:
 	for i in range(n_channels):
 		var start = i * vals_per_channel
 		var end = start + vals_per_channel
-		var normalized_data = floats.slice(start, end)
-		
-		# Get the data range for denormalization
+		var raw_data = floats.slice(start, end)
 		var var_name = variable_names[i]
-		var data_min = data_ranges[var_name]["min"]
-		var data_max = data_ranges[var_name]["max"]
+		 # Keep encoded values as-is (no denormalization!)
+		var processed_data = raw_data
 		
-		var processed_data = PackedFloat32Array()
-		processed_data.resize(normalized_data.size())
+				# Enhanced debugging - calculate min/max manually
+		var min_val = raw_data[0]
+		var max_val = raw_data[0]
+		for j in range(raw_data.size()):
+			var val = raw_data[j]
+			if val < min_val: min_val = val
+			if val > max_val: max_val = val
 		
-		var sentinel_count = 0
-		var land_count = 0
+		print("DEBUG - Variable ", var_name, " RAW from binary:")
+		print("  Min value: ", min_val)
+		print("  Max value: ", max_val)
+		print("  First 10 values: ", raw_data.slice(0, 10))
+
+		# Count different value ranges
 		var ocean_count = 0
+		var land_count = 0
+		var data_count = 0
+		var other_count = 0
+		var high_values = 0
 		
-		for j in range(normalized_data.size()):
-			var val = normalized_data[j]
+		for j in range(raw_data.size()):
+			var val = raw_data[j]
 			
-			# Check for the MORE DRASTIC sentinel values
-			if abs(val - (-999.0)) < 1.0:  # Land sentinel - more tolerance
-				# Land sentinel - preserve as very negative value
-				processed_data[j] = -999.0
-				land_count += 1
-				sentinel_count += 1
-			elif abs(val - (-500.0)) < 1.0:  # Ocean sentinel - more tolerance
-				# Ocean sentinel - preserve as very negative value
-				processed_data[j] = -500.0
+			if abs(val - 0.00) < 0.01:
 				ocean_count += 1
-				sentinel_count += 1
+			elif abs(val - 0.05) < 0.01:
+				land_count += 1
+			elif val >= 0.10 and val <= 1.0:
+				data_count += 1
+			elif val > 1.0:
+				high_values += 1
 			else:
-				# Normal data - denormalize to physical range
-				processed_data[j] = data_min + val * (data_max - data_min)
+				other_count += 1
 		
-		print("DEBUG - Variable ", var_name, ":")
-		print("  Land sentinels (-999): ", land_count)
-		print("  Ocean sentinels (-500): ", ocean_count) 
-		print("  Total extreme negatives: ", sentinel_count)
+		print("  Ocean (≈0.00): ", ocean_count)
+		print("  Land (≈0.05): ", land_count)
+		print("  Encoded data (0.10-1.0): ", data_count)
+		print("  Values > 1.0: ", high_values)
+		print("  Other values: ", other_count)
+		print("  Total: ", raw_data.size())
 		
 		result[var_name] = processed_data
 	
 	return result
+
+# func parse_channels(binary_data: PackedByteArray) -> Dictionary:
+# 	var result = {}
+# 	var floats = binary_data.to_float32_array()
+# 	var vals_per_channel = bytes_per_channel / 4
+	
+# 	for i in range(n_channels):
+# 		var start = i * vals_per_channel
+# 		var end = start + vals_per_channel
+# 		var normalized_data = floats.slice(start, end)
+		
+# 		# Get the data range for denormalization
+# 		var var_name = variable_names[i]
+# 		var data_min = data_ranges[var_name]["min"]
+# 		var data_max = data_ranges[var_name]["max"]
+		
+# 		var processed_data = PackedFloat32Array()
+# 		processed_data.resize(normalized_data.size())
+		
+# 		var sentinel_count = 0
+# 		var land_count = 0
+# 		var ocean_count = 0
+		
+# 		for j in range(normalized_data.size()):
+# 			var val = normalized_data[j]
+			
+# 			# Check for the MORE DRASTIC sentinel values
+# 			if abs(val - (-999.0)) < 1.0:  # Land sentinel - more tolerance
+# 				# Land sentinel - preserve as very negative value
+# 				processed_data[j] = -999.0
+# 				land_count += 1
+# 				sentinel_count += 1
+# 			elif abs(val - (-500.0)) < 1.0:  # Ocean sentinel - more tolerance
+# 				# Ocean sentinel - preserve as very negative value
+# 				processed_data[j] = -500.0
+# 				ocean_count += 1
+# 				sentinel_count += 1
+# 			else:
+# 				# Normal data - denormalize to physical range
+# 				processed_data[j] = data_min + val * (data_max - data_min)
+		
+# 		print("DEBUG - Variable ", var_name, ":")
+# 		print("  Land sentinels (-999): ", land_count)
+# 		print("  Ocean sentinels (-500): ", ocean_count) 
+# 		print("  Total extreme negatives: ", sentinel_count)
+		
+# 		result[var_name] = processed_data
+	
+# 	return result
 
 # Rest of the functions remain the same...
 func create_texture3d(float_array: PackedFloat32Array, var_name: String) -> ImageTexture3D:

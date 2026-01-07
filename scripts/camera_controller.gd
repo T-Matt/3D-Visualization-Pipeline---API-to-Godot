@@ -3,45 +3,32 @@ class_name VolumeCamera
 
 var orbit_center: Vector3 = Vector3.ZERO
 var orbit_distance: float = 20.0  # Increased from 5.0 for better initial view
-var orbit_angles: Vector2 = Vector2(PI/2, PI/3)  # (azimuth, elevation)
-var roll_angle: float = 0.0  # Z-axis rotation
+var orbit_angles: Vector2 = Vector2(-PI/2, PI/2)  # (azimuth, elevation)
+var roll_angle: float = PI # Z-axis rotation
 
 var mouse_sensitivity: float = 0.005
-var ortho_size: float = 15.0  # Increased from 10.0 for zoomed-out start
-var zoom_sensitivity: float = 0.5
-var min_ortho_size: float = 0.5  # Zoom in limit
-var max_ortho_size: float = 50.0  # Zoom out limit
+var current_fov: float = 70.0  # Field of view for perspective
+var zoom_sensitivity: float = 2.0  # FOV change per scroll
+var min_fov: float = 5.0  # Zoom in limit (narrow FOV)
+var max_fov: float = 100.0  # Zoom out limit (wide FOV)
 
 var is_rotating_orbit: bool = false  # Left-click: orbit rotation
 var is_rotating_roll: bool = false  # Right-click: Z-axis roll
 
 func _ready():
-	# Switch to orthographic projection
-	projection = PROJECTION_ORTHOGONAL
-	size = ortho_size
+	# Set to perspective projection
+	projection = PROJECTION_PERSPECTIVE
+	fov = current_fov
 	
-	# Set far plane - near plane doesn't matter in ortho
+	# Set clipping planes
+	near = 0.1
 	far = 1000.0
 	
-	update_camera_transform()
-	print("Camera initialized at: ", position, " looking at: ", orbit_center)
-	print("Ortho size: ", ortho_size)
-	
-	# DEBUG: Check if camera is current and basic setup
-	print("DEBUG - Camera current: ", current)
-	print("DEBUG - Camera projection: ", projection)
-	print("DEBUG - Camera transform: ", transform)
-	
-	# DEBUG: Check what's in the scene
-	var parent = get_parent()
-	if parent:
-		print("DEBUG - Scene children:")
-		for child in parent.get_children():
-			print("  ", child.name, " (", child.get_class(), ") visible: ", child.get("visible"))
+	update_camera_transform()  
 
 func _input(event: InputEvent):
 	if event is InputEventMouseButton:
-		# Left-click: orbit rotation (spherical)
+		# Left-click: screen-space camera movement (feels like dragging object)
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			is_rotating_orbit = event.pressed
 			is_rotating_roll = false
@@ -51,30 +38,54 @@ func _input(event: InputEvent):
 			is_rotating_roll = event.pressed
 			is_rotating_orbit = false
 		
-		# Scroll wheel zoom (changes orthographic size, not distance)
+		# Scroll wheel zoom (changes field of view)
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			ortho_size = max(min_ortho_size, ortho_size - zoom_sensitivity)
-			size = ortho_size
-			print("DEBUG - Zoomed in to size: ", ortho_size)
+			current_fov = max(min_fov, current_fov - zoom_sensitivity)
+			fov = current_fov
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			ortho_size = min(max_ortho_size, ortho_size + zoom_sensitivity)
-			size = ortho_size
-			print("DEBUG - Zoomed out to size: ", ortho_size)
+			current_fov = min(max_fov, current_fov + zoom_sensitivity)
+			fov = current_fov
 	
 	elif event is InputEventMouseMotion:
 		if is_rotating_orbit:
-			# Left-click: standard orbit rotation
-			orbit_angles.x -= event.relative.x * mouse_sensitivity
-			orbit_angles.y = clamp(orbit_angles.y - event.relative.y * mouse_sensitivity, 0.01, PI - 0.01)
-			update_camera_transform()
-		
+			# Left-click: move camera based on current viewing plane
+			move_camera_in_view_plane(event.relative)
+			
 		elif is_rotating_roll:
 			# Right-click: roll around Z-axis (turntable effect)
 			roll_angle -= event.relative.x * mouse_sensitivity
 			update_camera_transform()
 
+func move_camera_in_view_plane(mouse_delta: Vector2):
+	# Get camera's local coordinate system
+	var camera_right = global_transform.basis.x
+	var camera_up = global_transform.basis.y
+	var camera_forward = -global_transform.basis.z
+	
+	# Scale movement based on distance and FOV for consistent feel
+	var movement_scale = mouse_sensitivity * orbit_distance * 0.5
+	
+	# Calculate movement in camera's viewing plane
+	# Move camera opposite to mouse movement (so object appears to follow mouse)
+	var world_movement = camera_right * mouse_delta.x * movement_scale
+	world_movement += camera_up * -mouse_delta.y * movement_scale
+	
+	# Project this movement onto a sphere around the orbit center
+	# This keeps the camera at a consistent distance while moving in the view plane
+	var current_offset = position - orbit_center
+	var new_offset = current_offset + world_movement
+	
+	# Maintain the original distance from orbit center
+	new_offset = new_offset.normalized() * orbit_distance
+	
+	# Convert back to orbital angles
+	orbit_angles.x = atan2(new_offset.z, new_offset.x)
+	orbit_angles.y = clamp(acos(new_offset.y / orbit_distance), 0.01, PI - 0.01)
+	
+	update_camera_transform()
+
 func update_camera_transform():
-	# Calculate orbital position
+	# Calculate orbital position (same as before)
 	var x = orbit_distance * sin(orbit_angles.y) * cos(orbit_angles.x)
 	var y = orbit_distance * cos(orbit_angles.y)
 	var z = orbit_distance * sin(orbit_angles.y) * sin(orbit_angles.x)

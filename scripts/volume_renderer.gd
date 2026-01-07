@@ -7,13 +7,8 @@ var active_variable: String = "wind_speed"
 var data_ranges: Dictionary  # Store data ranges for shader uniforms
 
 func _ready():
-	print("DEBUG - VolumeRenderer starting...")
-	
 	setup_volume_mesh(Vector3(12, 201, 201))
-	print("DEBUG - Mesh setup complete")
-	
 	volume_material = create_volume_material()
-	
 	# Verify shader loaded
 	if volume_material == null:
 		print("ERROR: Failed to create volume material!")
@@ -22,8 +17,6 @@ func _ready():
 	if volume_material.shader == null:
 		print("ERROR: Shader failed to load!")
 		return
-	
-	print("DEBUG - Shader loaded successfully: ", volume_material.shader)
 	print("DEBUG - Shader path: ", volume_material.shader.resource_path)
 	
 	# Apply material
@@ -32,17 +25,6 @@ func _ready():
 	# Force update
 	set_surface_override_material(0, volume_material)
 	
-	print("DEBUG - VolumeRenderer ready")
-	print("DEBUG - Mesh AABB: ", mesh.get_aabb())
-	print("DEBUG - Mesh visible: ", visible)
-	print("DEBUG - Global position: ", global_position)
-	print("DEBUG - Material applied: ", material_override != null)
-	
-	# Check material parameters
-	print("DEBUG - Initial shader parameters:")
-	print("  step_size: ", volume_material.get_shader_parameter("step_size"))
-	print("  density_multiplier: ", volume_material.get_shader_parameter("density_multiplier"))
-	print("  active_variable: ", volume_material.get_shader_parameter("active_variable"))
 
 func setup_volume_mesh(dimensions: Vector3):
 	print("DEBUG - Setting up volume mesh with dimensions: ", dimensions)
@@ -80,29 +62,19 @@ func create_volume_material() -> ShaderMaterial:
 		print("DEBUG - Check if shader file exists at that path")
 		return null
 	
-	print("DEBUG - Shader resource loaded: ", shader)
-	print("DEBUG - Shader class: ", shader.get_class())
 	
 	var mat = ShaderMaterial.new()
 	mat.shader = shader
 	
 	# Set default parameters
-	print("DEBUG - Setting default shader parameters...")
 	mat.set_shader_parameter("step_size", 0.001)
 	mat.set_shader_parameter("density_multiplier", 0.5)
 	mat.set_shader_parameter("active_variable", 0)
-	
-	# Verify parameters were set
-	print("DEBUG - Verifying parameter setting:")
-	print("  step_size set to: ", mat.get_shader_parameter("step_size"))
-	print("  density_multiplier set to: ", mat.get_shader_parameter("density_multiplier"))
-	print("  active_variable set to: ", mat.get_shader_parameter("active_variable"))
 	
 	print("DEBUG - ShaderMaterial created successfully")
 	return mat
 
 func update_frame(textures_dict: Dictionary):
-	print("DEBUG - Updating frame with textures...")
 	
 	if volume_material == null:
 		print("ERROR: Volume material is null!")
@@ -137,12 +109,15 @@ func update_frame(textures_dict: Dictionary):
 	volume_material.set_shader_parameter("u_texture", textures_dict["u"])
 	volume_material.set_shader_parameter("v_texture", textures_dict["v"])
 	volume_material.set_shader_parameter("t_texture", textures_dict["t"])
+
+	# nearest bindings (same textures)
+	volume_material.set_shader_parameter("wind_speed_texture_nn", textures_dict["wind_speed"])
+	volume_material.set_shader_parameter("u_texture_nn", textures_dict["u"])
+	volume_material.set_shader_parameter("v_texture_nn", textures_dict["v"])
+	volume_material.set_shader_parameter("t_texture_nn", textures_dict["t"])
 	
 	print("DEBUG - All textures set to material successfully")
 	
-	# Verify textures were set (note: get_shader_parameter returns null for textures)
-	print("DEBUG - Current active variable index: ", volume_material.get_shader_parameter("active_variable"))
-
 func set_data_ranges(ranges: Dictionary):
 	"""Set the data ranges for proper colormap normalization in the shader"""
 	data_ranges = ranges
@@ -200,5 +175,3 @@ func set_active_variable(var_name: String):
 	
 	# Verify parameter was set
 	print("DEBUG - Active variable parameter set to: ", volume_material.get_shader_parameter("active_variable"))
-
-

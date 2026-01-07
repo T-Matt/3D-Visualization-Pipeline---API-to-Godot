@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://dkh2dnqn7jpkl"]
 
 [ext_resource type="Script" uid="uid://bg8sdhhf3upo1" path="res://scripts/main_controller.gd" id="1_rarhs"]
-[ext_resource type="Script" uid="uid://t24twvx31dku" path="res://scripts/volume_loader_debug.gd" id="2_vcsgt"]
+[ext_resource type="Script" uid="uid://oun11ndmjlqc" path="res://scripts/volume_loader_debug.gd" id="2_vcsgt"]
 [ext_resource type="Script" uid="uid://dtacpkn87fjc1" path="res://scripts/volume_renderer.gd" id="3_c01mt"]
 [ext_resource type="Script" uid="uid://cjr2slgo11nrc" path="res://scripts/camera_controller.gd" id="4_nxtc6"]
 
@@ -15,7 +15,6 @@ script = ExtResource("2_vcsgt")
 script = ExtResource("3_c01mt")
 
 [node name="Camera" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 script = ExtResource("4_nxtc6")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
@@ -35,7 +34,6 @@ anchors_preset = -1
 anchor_left = -0.432
 anchor_right = -0.432
 offset_left = 93.28
-offset_whaytop = -17.0
 offset_right = 411.28
 offset_bottom = 112.0
 
